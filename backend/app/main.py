@@ -11,7 +11,7 @@ from app.routes.auth import router as auth_router
 from app.routes.restaurants import router as restaurant_router
 from app.routes.orders import router as order_router
 from app.routes import payment
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Easy Eats API")
 app.add_middleware(
@@ -32,6 +32,16 @@ app.include_router(restaurant_router)
 app.include_router(payment.router)
 app.include_router(order_router)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://easy-eats-two.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def home():
