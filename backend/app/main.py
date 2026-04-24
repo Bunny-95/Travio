@@ -11,7 +11,7 @@ from app.routes.auth import router as auth_router
 from app.routes.restaurants import router as restaurant_router
 from app.routes.orders import router as order_router
 from app.routes import payment
-from app.routes import chat
+
 
 app = FastAPI(title="Easy Eats API")
 app.add_middleware(
@@ -29,7 +29,6 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(auth_router)
 app.include_router(restaurant_router)
-app.include_router(chat.router)
 app.include_router(payment.router)
 app.include_router(order_router)
 
