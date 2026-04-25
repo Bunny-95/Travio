@@ -41,8 +41,10 @@ function Cart() {
       handler: async function (response) {
         try {
           const res = await api.post(
-            "/orders/place?user_id=1&restaurant_id=7&total=" +
-              total
+            "/orders/place?user_id=1&restaurant_id=" +
+cart[0].restaurant_id +
+"&total=" +
+total
           );
 
           const id = res.data.order_id;
