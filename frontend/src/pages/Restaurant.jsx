@@ -16,19 +16,19 @@ function Restaurant() {
   const [active, setActive] = useState("Popular");
 
   const restaurants = {
-    7: {
+    1: {
       name: "Campus Cafe",
       subtitle: "Snacks • Drinks • Fast Pickup",
       hero:
         "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80",
     },
-    8: {
+    2: {
       name: "Burger Hub",
       subtitle: "Burgers • Fries • Combo Meals",
       hero:
         "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80",
     },
-    9: {
+    3: {
       name: "Coffee Corner",
       subtitle: "Coffee • Bakery • Fresh Bakes",
       hero:
