@@ -167,6 +167,10 @@ function Admin() {
                       Order #{order.id}
                     </h3>
 
+                    <p className="text-sm text-gray-500 mt-2">
+  {order.items}
+</p>
+
                     <p className="text-sm text-gray-500 mt-1">
                       ₹{order.total}
                     </p>

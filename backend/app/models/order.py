@@ -1,15 +1,56 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
-from app.database import Base
-from datetime import datetime
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.order import Order
+
+router = APIRouter(
+    prefix="/orders",
+    tags=["Orders"]
+)
+
+@router.post("/place")
+def place_order(
+    user_id: int,
+    restaurant_id: int,
+    total: float,
+    items: str,
+    db: Session = Depends(get_db)
+):
+    order = Order(
+        user_id=user_id,
+        restaurant_id=restaurant_id,
+        total=total,
+        items=items
+    )
+
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    return {
+        "message": "Order placed",
+        "order_id": order.id
+    }
 
 
-class Order(Base):
-    __tablename__ = "orders"
+@router.get("/")
+def all_orders(
+    db: Session = Depends(get_db)
+):
+    return db.query(Order).all()
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    restaurant_id = Column(Integer, ForeignKey("restaurants.id"))
-    status = Column(String, default="Placed")
-    total = Column(Float, default=0)
-    estimated_ready_time = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+@router.put("/{order_id}")
+def update_status(
+    order_id: int,
+    status: str,
+    db: Session = Depends(get_db)
+):
+    order = db.query(Order).filter(
+        Order.id == order_id
+    ).first()
+
+    order.status = status
+    db.commit()
+
+    return {"message": "Updated"}

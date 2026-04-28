@@ -1,12 +1,12 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, String, Float
 from app.database import Base
 
-class OrderItem(Base):
-    __tablename__ = "order_items"
-
+class Order(Base):
+    __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    order_id = Column(Integer, ForeignKey("orders.id"))
-    menu_item_id = Column(Integer, ForeignKey("menu_items.id"))
-    qty = Column(Integer, default=1)
-
+    user_id = Column(Integer)
+    restaurant_id = Column(Integer)
+    total = Column(Float)
+    status = Column(String, default="Pending")
+    items = Column(String)

@@ -50,15 +50,24 @@ function Cart() {
 
       handler: async function () {
   try {
-    const restaurantId =
-      cart?.[0]?.restaurant_id || 1;
+    const itemText = cart
+  .map(
+    (item) =>
+      item.name +
+      " x" +
+      item.qty
+  )
+  .join(", ");
 
-    const res = await api.post(
-      "/orders/place?user_id=1&restaurant_id=" +
-        restaurantId +
-        "&total=" +
-        total
-    );
+const res = await api.post(
+  "/orders/place?user_id=1&restaurant_id=" +
+    cart[0].restaurant_id +
+    "&total=" +
+    total +
+    "&items=" +
+    encodeURIComponent(itemText)
+);
+    
 
     const orderId =
       res.data.order_id;
