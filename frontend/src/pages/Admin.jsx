@@ -1,5 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+  BarChart, Bar
+} from 'recharts';
 import api from "../api";
 
 function Admin() {
@@ -106,6 +111,42 @@ function Admin() {
   const ready = orders.filter(o => o.status === "Ready").length;
   const revenue = orders.filter(o => o.status === "Collected" || o.status === "Ready").reduce((sum, o) => sum + o.total, 0);
 
+  // Chart Data Aggregation
+  const hourlyDataMap = orders.reduce((acc, o) => {
+    if (o.estimated_ready_time) {
+      const hour = o.estimated_ready_time.split(":")[0];
+      const hourLabel = `${hour}:00`;
+      acc[hourLabel] = (acc[hourLabel] || 0) + 1;
+    }
+    return acc;
+  }, {});
+  
+  const trendData = Object.keys(hourlyDataMap).sort().map(hour => ({
+    time: hour,
+    orders: hourlyDataMap[hour]
+  }));
+
+  const statusCounts = orders.reduce((acc, o) => {
+    acc[o.status] = (acc[o.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const pieData = [
+    { name: "Placed", value: statusCounts["Placed"] || 0, color: "#9ca3af" },
+    { name: "Preparing", value: (statusCounts["Accepted"] || 0) + (statusCounts["Preparing"] || 0) + (statusCounts["Almost Ready"] || 0), color: "#eab308" },
+    { name: "Ready", value: statusCounts["Ready"] || 0, color: "#84cc16" },
+    { name: "Collected", value: statusCounts["Collected"] || 0, color: "#18181b" }
+  ].filter(d => d.value > 0);
+
+  const revenueData = orders
+    .filter(o => o.status === "Ready" || o.status === "Collected")
+    .slice(0, 10)
+    .reverse()
+    .map(o => ({
+      name: `#${o.id}`,
+      amount: o.total
+    }));
+
   // Filtering & Search
   const filteredOrders = orders.filter((o) => {
     const code = (1000 + o.id).toString();
@@ -180,6 +221,93 @@ function Admin() {
             <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">Revenue (Today)</p>
             <h2 className="text-4xl font-black mt-2 text-lime-400">₹{revenue}</h2>
           </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          
+          {/* Trend Chart */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-2">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-zinc-900">Order Volume Trend</h3>
+              <p className="text-sm text-gray-500">Orders grouped by estimated ready hour</p>
+            </div>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#84cc16" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#84cc16" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dx={-10} allowDecimals={false} />
+                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} cursor={{stroke: '#e5e7eb', strokeWidth: 2}} />
+                  <Line type="monotone" dataKey="orders" stroke="#84cc16" strokeWidth={4} dot={{r: 4, fill: '#84cc16', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} fill="url(#colorOrders)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Status Distribution */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
+            <div className="mb-2">
+              <h3 className="text-lg font-bold text-zinc-900">Current Status</h3>
+              <p className="text-sm text-gray-500">Live order distribution</p>
+            </div>
+            <div className="flex-1 min-h-[200px] w-full relative flex items-center justify-center">
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-gray-400 text-sm font-medium">No active orders</div>
+              )}
+              {pieData.length > 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-3xl font-black text-zinc-900">{orders.length}</span>
+                  <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total</span>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap justify-center gap-3 mt-4">
+              {pieData.map((d, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs font-bold text-gray-600">
+                  <div className="w-3 h-3 rounded-full" style={{backgroundColor: d.color}}></div>
+                  {d.name}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Revenue Bar Chart */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-3">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-zinc-900">Revenue History</h3>
+              <p className="text-sm text-gray-500">Tracking values of the last 10 completed orders</p>
+            </div>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dx={-10} tickFormatter={(val) => `₹${val}`} />
+                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} cursor={{fill: '#f9fafb'}} formatter={(value) => [`₹${value}`, 'Revenue']} />
+                  <Bar dataKey="amount" fill="#18181b" radius={[6, 6, 6, 6]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
         </div>
 
         {/* Controls */}
