@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useState } from "react";
 import api from "../api";
 
 function Cart() {
@@ -12,6 +13,10 @@ function Cart() {
     clearCart,
   } = useCart();
 
+  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [couponMsg, setCouponMsg] = useState("");
+
   const subtotal = cart.reduce(
     (sum, item) =>
       sum + item.price * item.qty,
@@ -21,8 +26,25 @@ function Cart() {
   const fee =
     cart.length > 0 ? 9 : 0;
 
+  const applyCoupon = () => {
+    if (!couponCode) return;
+    const code = couponCode.toUpperCase().trim();
+    if (code === "EASY20") {
+      const amount = subtotal * 0.2;
+      setDiscount(amount);
+      setCouponMsg("🎉 ₹" + amount.toFixed(0) + " saved!");
+    } else if (code === "FLAT50") {
+      const amount = 50;
+      setDiscount(amount);
+      setCouponMsg("🎉 ₹50 flat discount applied!");
+    } else {
+      setDiscount(0);
+      setCouponMsg("❌ Invalid coupon code");
+    }
+  };
+
   const total =
-    subtotal + fee;
+    subtotal + fee - discount;
 
  const placeOrder = async () => {
   try {
@@ -50,14 +72,13 @@ function Cart() {
 
       handler: async function () {
   try {
-    const itemText = cart
-  .map(
-    (item) =>
-      item.name +
-      " x" +
-      item.qty
-  )
-  .join(", ");
+    const itemText = JSON.stringify(
+      cart.map((item) => ({
+        name: item.name,
+        qty: item.qty,
+        price: item.price
+      }))
+    );
 
 const res = await api.post(
   "/orders/place?user_id=1&restaurant_id=" +
@@ -193,14 +214,14 @@ const res = await api.post(
                   key={index}
                   className="bg-white rounded-3xl p-4 shadow-sm border"
                 >
-                  <div className="flex justify-between items-start">
-
-                    <div>
-                      <h3 className="font-bold text-lg">
+                  <div className="flex justify-between items-start gap-4">
+                    <img src={item.image} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg leading-tight">
                         {item.name}
                       </h3>
 
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-500 mt-1 font-medium">
                         ₹{item.price} each
                       </p>
                     </div>
@@ -249,48 +270,91 @@ const res = await api.post(
 
           </div>
 
-          {/* Promo */}
-          <div className="px-4 md:px-6 xl:px-8 mt-5">
-            <div className="bg-lime-500 rounded-3xl p-4 text-black shadow-sm">
-              <p className="text-sm opacity-70">
-                Promo Applied
-              </p>
-
-              <h3 className="text-xl font-bold mt-1">
-                FREE PICKUP
-              </h3>
+          {/* Coupon Section */}
+          <div className="px-4 md:px-6 xl:px-8 mt-6">
+            <h2 className="text-lg font-bold mb-3 px-1 text-zinc-900">Offers & Benefits</h2>
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col gap-3">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  placeholder="Enter coupon code (e.g., EASY20)"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value);
+                    setCouponMsg("");
+                    setDiscount(0);
+                  }}
+                  className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition-all uppercase text-zinc-900 font-bold placeholder-gray-400 placeholder:font-normal"
+                />
+                <button
+                  onClick={applyCoupon}
+                  className="bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-zinc-800 active:scale-95 transition-all"
+                >
+                  Apply
+                </button>
+              </div>
+              {couponMsg && (
+                <p className={`text-sm font-bold px-1 ${couponMsg.includes('❌') ? 'text-red-500' : 'text-lime-600'}`}>
+                  {couponMsg}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Bill */}
-          <div className="px-4 md:px-6 xl:px-8 mt-5">
-            <div className="bg-white rounded-3xl p-5 shadow-sm border space-y-3">
-
-              <div className="flex justify-between text-sm">
-                <p className="text-gray-500">
-                  Subtotal
-                </p>
-
-                <p>
-                  ₹{subtotal}
-                </p>
+          {/* Bill Section */}
+          <div className="px-4 md:px-6 xl:px-8 mt-6">
+            <h2 className="text-lg font-bold mb-3 px-1">Bill Details</h2>
+            <div className="bg-white rounded-3xl p-5 shadow-sm border">
+              
+              {/* Pickup Info Banner */}
+              <div className="bg-lime-50 border border-lime-100 rounded-2xl p-4 mb-5 flex items-start gap-3">
+                <div className="bg-lime-100 text-lime-700 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-lime-800">FREE PICKUP</h3>
+                  <p className="text-xs text-lime-700 mt-0.5 leading-snug">
+                    Collect your order at the counter using your pickup code
+                  </p>
+                </div>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <p className="text-gray-500">
-                  Platform Fee
-                </p>
+              <div className="space-y-4">
+                <div className="flex justify-between text-sm">
+                  <p className="text-gray-600">Item Total</p>
+                  <p className="font-medium">₹{subtotal}</p>
+                </div>
 
-                <p>
-                  ₹{fee}
-                </p>
-              </div>
+                <div className="flex justify-between text-sm border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-1 group relative">
+                    <p className="text-gray-600">Platform Fee</p>
+                    <div className="text-gray-400 hover:text-gray-600 cursor-help">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      {/* Tooltip */}
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-zinc-800 text-white text-xs rounded-lg text-center shadow-lg pointer-events-none z-10 transition-opacity">
+                        This fee supports platform operations
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="font-medium">₹{fee}</p>
+                </div>
 
-              <div className="border-t pt-3 flex justify-between font-bold text-lg">
-                <p>Total</p>
-                <p>
-                  ₹{total}
-                </p>
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm text-lime-600 font-bold pt-2">
+                    <p>Item Discount</p>
+                    <p>- ₹{discount.toFixed(0)}</p>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center pt-2">
+                  <p className="font-bold text-lg text-zinc-900">Grand Total</p>
+                  <p className="font-bold text-xl text-lime-600">₹{total.toFixed(0)}</p>
+                </div>
               </div>
 
             </div>

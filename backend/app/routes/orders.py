@@ -25,6 +25,7 @@ def place_order(
     user_id: int,
     restaurant_id: int,
     total: float,
+    items: str = "",
     db: Session = Depends(get_db)
 ):
     # Current time (demo mode or real time)
@@ -83,6 +84,7 @@ def place_order(
         restaurant_id=restaurant_id,
         status="Placed",
         total=total,
+        items=items,
         estimated_ready_time=ready_time.strftime("%H:%M")
     )
 
@@ -199,5 +201,22 @@ def track_order(order_id: int, db: Session = Depends(get_db)):
         "order_id": order.id,
         "status": status,
         "predicted_minutes": remaining,
-        "ready_time": order.estimated_ready_time
+        "ready_time": order.estimated_ready_time,
+        "items": order.items,
+        "total": order.total,
+        "restaurant_id": order.restaurant_id
     }
+
+# -----------------------------------
+# DELETE ORDER
+# -----------------------------------
+@router.delete("/{order_id}")
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    db.delete(order)
+    db.commit()
+    
+    return {"message": "Order deleted", "order_id": order_id}

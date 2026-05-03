@@ -29,6 +29,21 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
+import sqlite3
+try:
+    conn = sqlite3.connect("easyeats.db")
+    conn.execute("ALTER TABLE orders ADD COLUMN items VARCHAR")
+    conn.commit()
+except Exception:
+    pass
+
+try:
+    conn = sqlite3.connect("easyeats.db")
+    conn.execute("ALTER TABLE orders ADD COLUMN estimated_ready_time VARCHAR")
+    conn.commit()
+except Exception:
+    pass
+
 app.include_router(auth_router)
 app.include_router(restaurant_router)
 app.include_router(payment.router)

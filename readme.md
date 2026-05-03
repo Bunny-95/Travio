@@ -221,8 +221,7 @@ python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env            # Fill in your environment variables
-alembic upgrade head            # Run migrations
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 ### Frontend Setup
@@ -262,6 +261,23 @@ VITE_RAZORPAY_KEY_ID=rzp_test_xxxx
 ---
 
 
+---
+
+## 🧗 Challenges Faced
+
+- **Understanding and implementing JWT authentication**
+- **Designing efficient database schema**
+- **Handling API errors and debugging**
+- **Synchronizing frontend with backend APIs**
+
+---
+
+## 🧠 Key Learnings
+
+- **Practical knowledge of FastAPI backend development**
+- **Experience with authentication and security (JWT)**
+- **Improved API design and testing skills**
+- **Better teamwork and task coordination**
 
 ---
 

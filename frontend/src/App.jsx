@@ -14,11 +14,13 @@ import Admin from "./pages/Admin";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./context/CartContext";
+import GlobalCartBar from "./components/GlobalCartBar";
 
 function App() {
   return (
     <CartProvider>
       <BrowserRouter>
+        <GlobalCartBar />
         <Routes>
 
           <Route
